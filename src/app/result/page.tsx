@@ -1,14 +1,16 @@
 "use client";
 import Image from "next/image";
-import { useRef, useEffect, useState } from "react";
+import { Suspense } from 'react'
+import { useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Button } from "@/app/components/ui/button";
-import { Download, Sparkles, Rocket, Star } from "lucide-react";
-import html2canvas from "html2canvas";
+// import { Button } from "@/app/components/ui/button";
+import { Sparkles, Rocket, Star } from "lucide-react";
+// import html2canvas from "html2canvas";
 import zerotomaker from "@/app/public/assets/zerotomaker.png";
 import tinkerhub from "@/app/public/assets/tinkerhub.png";
 import backgroundImage from "@/app/public/assets/009807469799.jpg";
-export default function Component() {
+
+function SearchParamsContent() {
   const searchParams = useSearchParams();
   const name = searchParams.get("name") || "Your Name";
   const croppedImageUrl =
@@ -16,43 +18,6 @@ export default function Component() {
   const divRef = useRef<HTMLDivElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  useEffect(() => {
-    const img = new window.Image();
-    img.onload = () => setImageLoaded(true);
-    img.src = croppedImageUrl;
-  }, [croppedImageUrl]);
-
-  const handleDownload = async () => {
-    if (divRef.current) {
-      try {
-        // Use html2canvas to capture the div
-        const canvas = await html2canvas(divRef.current, {
-          useCORS: true, // Allow cross-origin images
-          scale: window.devicePixelRatio, // Ensure high-resolution output
-          logging: true, // Enable logging for debugging
-          backgroundColor: null, // Set background color to transparent if needed
-        });
-
-        const dataURL = canvas.toDataURL("image/png", 1.0); // Convert canvas to image
-
-        // Create a link element for downloading the image
-        const link = document.createElement("a");
-        link.href = dataURL;
-        link.download = `${name}_card.png`; // Set the download file name
-
-        // Append the link to the body (necessary for Firefox)
-        document.body.appendChild(link);
-        link.click(); // Trigger the download
-
-        // Clean up by removing the link
-        document.body.removeChild(link);
-      } catch (error) {
-        console.error("Error capturing the canvas:", error);
-      }
-    } else {
-      console.error("divRef.current is not defined.");
-    }
-  };
   const CardContent = () => (
     <div
       className="relative w-full h-full bg-yellow-100 shadow-lg overflow-hidden p-6"
@@ -85,6 +50,7 @@ export default function Component() {
                 width={192}
                 height={192}
                 className="object-cover"
+                onLoad={() => setImageLoaded(true)}
               />
             </div>
           )}
@@ -106,13 +72,21 @@ export default function Component() {
   );
 
   return (
+    <div className="w-full max-w-2xl aspect-[4/3] mb-4">
+      <div ref={divRef}>
+        <CardContent />
+      </div>
+    </div>
+  );
+}
+
+export default function Component() {
+  return (
     <>
       <div className="min-h-screen bg-yellow-50 flex flex-col items-center justify-center p-4 gap-5">
-        <div className="w-full max-w-2xl aspect-[4/3] mb-4">
-          <div ref={divRef}>
-            <CardContent />
-          </div>
-        </div>
+        <Suspense fallback={<div>Loading...</div>}>
+          <SearchParamsContent />
+        </Suspense>
       </div>
       <div className="flex justify-center items-center bg-yellow-100 p-4 flex-col gap-4">
         <h3>

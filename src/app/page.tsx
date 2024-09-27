@@ -98,8 +98,8 @@ export default function FancyInputForm() {
     console.log("Proceeding with:", { name, croppedImageUrl });
     router.push(
       `/result?name=${encodeURIComponent(
-        name
-      )}&croppedImageUrl=${encodeURIComponent(croppedImageUrl)}`
+        name || ""
+      )}&croppedImageUrl=${encodeURIComponent(croppedImageUrl || "")}`
     );
   }, [name, croppedImageUrl, router]);
   return (
