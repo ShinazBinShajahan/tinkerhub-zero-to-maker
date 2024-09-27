@@ -85,13 +85,15 @@ function Component() {
       <div className="flex justify-center items-center bg-yellow-100 p-4 flex-col gap-4">
         <h3>
           Made with ❤️ by{" "}
-          <a
-            href="https://www.instagram.com/shinazbinshajahan/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Shinaz Bin Shajahan
-          </a>
+          <span className="text-blue-500">
+            <a
+              href="https://www.instagram.com/shinazbinshajahan/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Shinaz Bin Shajahan{" "}
+            </a>
+          </span>
         </h3>
       </div>
     </>
