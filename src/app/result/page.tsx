@@ -59,7 +59,7 @@ function Component() {
           <Star className="absolute top-0 right-0 text-yellow-500 w-8 h-8 transform -translate-y-1/2 translate-x-1/2" />
         </div>
         <p className="text-center font-medium text-gray-800 mt-4 px-4 text-xl">
-          Hello, I&apos;m <span className="font-bold">{name}</span> and I just
+          Hello, I&apos;m <span className="font-bold">{name}</span>😉 and I just
           Participated in
           <span className="text-blue-500 font-bold"> Zero to Maker</span> by
           Tinkerhub MBCCET 🚀
@@ -91,7 +91,7 @@ function Component() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Shinaz Bin Shajahan{" "}
+              Shinaz Bin Shajahan😉{" "}
             </a>
           </span>
         </h3>
