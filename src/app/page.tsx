@@ -1,101 +1,218 @@
+"use client";
+import React, { useState, useCallback } from "react";
+import ReactCrop, { Crop, PixelCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 import Image from "next/image";
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+import zerotomaker from "@/app/public/assets/zerotomaker.png";
+import { useRouter } from "next/navigation";
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+export default function FancyInputForm() {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [image, setImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Crop>({
+    unit: "%",
+    width: 90,
+    height: 90,
+    x: 5,
+    y: 5,
+  });
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
+  const [croppedImageUrl, setCroppedImageUrl] = useState<string | null>(null);
+  const [step, setStep] = useState<"input" | "crop" | "preview">("input");
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        if (typeof reader.result === "string") {
+          setImage(reader.result);
+        }
+      });
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
+  const getCroppedImg = useCallback(
+    (image: HTMLImageElement, crop: PixelCrop): Promise<string> => {
+      const canvas = document.createElement("canvas");
+      const scaleX = image.naturalWidth / image.width;
+      const scaleY = image.naturalHeight / image.height;
+      canvas.width = crop.width;
+      canvas.height = crop.height;
+      const ctx = canvas.getContext("2d");
+
+      if (ctx) {
+        ctx.drawImage(
+          image,
+          crop.x * scaleX,
+          crop.y * scaleY,
+          crop.width * scaleX,
+          crop.height * scaleY,
+          0,
+          0,
+          crop.width,
+          crop.height
+        );
+      }
+
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            console.error("Canvas is empty");
+            return;
+          }
+          const croppedImageUrl = URL.createObjectURL(blob);
+          resolve(croppedImageUrl);
+        }, "image/jpeg");
+      });
+    },
+    []
+  );
+
+  const handleCropComplete = useCallback((crop: PixelCrop) => {
+    setCompletedCrop(crop);
+  }, []);
+
+  const handleProceed = useCallback(async () => {
+    if (step === "input" && name && image) {
+      setStep("crop");
+    } else if (step === "crop" && completedCrop) {
+      try {
+        const sourceImage = document.getElementById(
+          "source-image"
+        ) as HTMLImageElement;
+        if (sourceImage) {
+          const croppedImage = await getCroppedImg(sourceImage, completedCrop);
+          setCroppedImageUrl(croppedImage);
+          setStep("preview");
+        }
+      } catch (e) {
+        console.error("Error cropping image:", e);
+      }
+    }
+  }, [step, name, image, completedCrop, getCroppedImg]);
+
+  const handleFinalProceed = useCallback(() => {
+    console.log("Proceeding with:", { name, croppedImageUrl });
+    router.push(
+      `/result?name=${encodeURIComponent(
+        name
+      )}&croppedImageUrl=${encodeURIComponent(croppedImageUrl)}`
+    );
+  }, [name, croppedImageUrl, router]);
+  return (
+    <div className="min-h-screen bg-yellow-50 flex items-center justify-center p-4">
+      <div className="bg-white p-8 rounded-lg shadow-lg border-4 border-yellow-300 border-double max-w-md w-full">
+        <Image
+          src={zerotomaker}
+          alt="Zero to Maker"
+          width={5000}
+          height={5000}
+          className="w-full h-auto"
+        />
+
+        {step === "input" && (
+          <>
+            <div className="mb-4">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-300 focus:ring focus:ring-yellow-200 focus:ring-opacity-50 text-black"
+                placeholder="Enter your name"
+              />
+            </div>
+            <div className="mb-4">
+              <label
+                htmlFor="image"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Upload Image
+              </label>
+              <input
+                type="file"
+                id="image"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="mt-1 block w-full text-sm text-black
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-full file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-yellow-50 file:text-yellow-700
+                  hover:file:bg-yellow-100"
+              />
+            </div>
+          </>
+        )}
+
+        {step === "crop" && image && (
+          <div className="mt-4">
+            <p className="mb-2 text-sm text-gray-600">
+              Drag the corners to adjust the crop area. The image will be
+              cropped to a square.
+            </p>
+            <ReactCrop
+              // src={image}
+              crop={crop}
+              onChange={(newCrop) => setCrop(newCrop)}
+              onComplete={handleCropComplete}
+              aspect={1}
+              circularCrop
+            >
+              <Image
+                src={image}
+                id="source-image"
+                alt="Source"
+                width={500}
+                height={500}
+                unoptimized={true}
+                style={{ maxWidth: "100%", height: "auto" }}
+              />
+            </ReactCrop>
+          </div>
+        )}
+
+        {step === "preview" && (
+          <div className="mt-4">
+            <h2 className="text-lg font-semibold mb-2">Preview</h2>
+            <p className="mb-2 text-black font-bold">Name: {name}</p>
+            {croppedImageUrl && (
+              <Image
+                src={croppedImageUrl}
+                alt="Cropped"
+                width={256}
+                height={256}
+                className="object-cover rounded-lg mx-auto mb-4"
+              />
+            )}
+            <button
+              onClick={handleFinalProceed}
+              className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition-colors"
+            >
+              Proceed
+            </button>
+          </div>
+        )}
+
+        {step !== "preview" && (
+          <button
+            onClick={handleProceed}
+            className="mt-4 w-full bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600 transition-colors"
+            disabled={!name || !image || (step === "crop" && !completedCrop)}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            {step === "input" ? "Proceed to Crop" : "Finish Cropping"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
