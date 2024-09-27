@@ -1,22 +1,25 @@
 "use client";
 import Image from "next/image";
-import { Suspense } from 'react'
-import { useRef, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-// import { Button } from "@/app/components/ui/button";
 import { Sparkles, Rocket, Star } from "lucide-react";
-// import html2canvas from "html2canvas";
 import zerotomaker from "@/app/public/assets/zerotomaker.png";
 import tinkerhub from "@/app/public/assets/tinkerhub.png";
 import backgroundImage from "@/app/public/assets/009807469799.jpg";
-
-function SearchParamsContent() {
+import { Suspense } from "react";
+function Component() {
   const searchParams = useSearchParams();
   const name = searchParams.get("name") || "Your Name";
   const croppedImageUrl =
     searchParams.get("croppedImageUrl") || "/placeholder.svg";
   const divRef = useRef<HTMLDivElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    const img = new window.Image();
+    img.onload = () => setImageLoaded(true);
+    img.src = croppedImageUrl;
+  }, [croppedImageUrl]);
 
   const CardContent = () => (
     <div
@@ -50,7 +53,6 @@ function SearchParamsContent() {
                 width={192}
                 height={192}
                 className="object-cover"
-                onLoad={() => setImageLoaded(true)}
               />
             </div>
           )}
@@ -72,21 +74,13 @@ function SearchParamsContent() {
   );
 
   return (
-    <div className="w-full max-w-2xl aspect-[4/3] mb-4">
-      <div ref={divRef}>
-        <CardContent />
-      </div>
-    </div>
-  );
-}
-
-export default function Component() {
-  return (
     <>
       <div className="min-h-screen bg-yellow-50 flex flex-col items-center justify-center p-4 gap-5">
-        <Suspense fallback={<div>Loading...</div>}>
-          <SearchParamsContent />
-        </Suspense>
+        <div className="w-full max-w-2xl aspect-[4/3] mb-4">
+          <div ref={divRef}>
+            <CardContent />
+          </div>
+        </div>
       </div>
       <div className="flex justify-center items-center bg-yellow-100 p-4 flex-col gap-4">
         <h3>
@@ -101,5 +95,13 @@ export default function Component() {
         </h3>
       </div>
     </>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Component />
+    </Suspense>
   );
 }
