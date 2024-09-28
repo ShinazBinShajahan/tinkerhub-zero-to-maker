@@ -2,11 +2,14 @@
 import Image from "next/image";
 import { useRef, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Sparkles, Rocket, Star } from "lucide-react";
+import { Sparkles, Rocket, Star, Copy, Check } from "lucide-react";
 import zerotomaker from "@/app/public/assets/zerotomaker.png";
 import tinkerhub from "@/app/public/assets/tinkerhub.png";
 import backgroundImage from "@/app/public/assets/009807469799.jpg";
 import { Suspense } from "react";
+import { Toaster } from "../components/ui/toaster";
+import { useToast } from "../components/ui/use-toast";
+
 function Component() {
   const searchParams = useSearchParams();
   const name = searchParams.get("name") || "Your Name";
@@ -14,6 +17,8 @@ function Component() {
     searchParams.get("croppedImageUrl") || "/placeholder.svg";
   const divRef = useRef<HTMLDivElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const img = new window.Image();
@@ -28,21 +33,23 @@ function Component() {
     >
       <div className="relative flex flex-col items-center justify-between h-full bg-white bg-opacity-70 rounded-lg p-4">
         <div className="w-full flex justify-between items-center">
-          <Image
-            src={zerotomaker}
-            alt="Logo"
-            width={100}
-            height={100}
-            className="object-contain"
-          />
+          <div className="w-20 h-20 relative">
+            <Image
+              src={zerotomaker}
+              alt="Zero to Maker Logo"
+              layout="fill"
+              objectFit="contain"
+            />
+          </div>
           <Sparkles className="text-yellow-500 w-12 h-12" />
-          <Image
-            src={tinkerhub}
-            alt="Logo"
-            width={64}
-            height={64}
-            className="object-contain"
-          />
+          <div className="w-16 h-16 relative">
+            <Image
+              src={tinkerhub}
+              alt="Tinkerhub Logo"
+              layout="fill"
+              objectFit="contain"
+            />
+          </div>
         </div>
         <div className="my-6 relative">
           {imageLoaded && (
@@ -73,12 +80,71 @@ function Component() {
     </div>
   );
 
+  const longParagraph = `🌟 Exciting Day at Zero To Maker 🌟
+
+  Today, I had the opportunity to attend an insightful session hosted by Tinkerhub MBCCET, titled "Zero To Maker" at Mar Baselios Christian College of Engineering & Technology. The talk emphasized the power of community and networking in shaping us into better makers. It was truly eye-opening to learn how to leverage the Tinkerhub platform to unlock new opportunities and grow through collaboration!
+  
+  A big thank you to all the speakers and organizers for making this an inspiring session. Looking forward to applying these insights and diving deeper into the world of innovation!
+  @TinkerhubMBCCET
+  #TinkerHub #ZeroToMaker #Networking #Innovation #CommunityBuilding #Makers`;
+  const handleCopy = async () => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        // For modern browsers
+        await navigator.clipboard.writeText(longParagraph);
+      } else {
+        // Fallback for older browsers and non-HTTPS environments
+        const textArea = document.createElement("textarea");
+        textArea.value = longParagraph;
+        textArea.style.position = "fixed";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand("copy");
+        } catch (err) {
+          console.error("Fallback: Oops, unable to copy", err);
+        }
+        document.body.removeChild(textArea);
+      }
+      setIsCopied(true);
+      toast({
+        title: "Content copied!",
+        description: "The paragraph has been copied to your clipboard.",
+      });
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy the content. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <>
-      <div className="min-h-screen bg-yellow-50 flex flex-col items-center justify-center p-4 gap-5">
-        <div className="w-full max-w-2xl aspect-[4/3] mb-4">
-          <div ref={divRef}>
-            <CardContent />
+      <div className="min-h-screen bg-yellow-50 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-2xl flex flex-col items-center">
+          <div className="w-full aspect-[4/3] mb-4">
+            <div ref={divRef}>
+              <CardContent />
+            </div>
+          </div>
+          <div
+            className="w-full bg-white rounded-lg shadow-md p-6 mt-4 cursor-pointer transition-all duration-300 hover:shadow-lg"
+            onClick={handleCopy}
+          >
+            <h3 className="text-xl font-semibold mb-4 flex items-center justify-between">
+              Click to copy contents
+              {isCopied ? (
+                <Check className="text-green-500" />
+              ) : (
+                <Copy className="text-gray-500" />
+              )}
+            </h3>
+            <p className="text-gray-700 text-sm">{longParagraph}</p>
           </div>
         </div>
       </div>
@@ -96,6 +162,7 @@ function Component() {
           </span>
         </h3>
       </div>
+      <Toaster />
     </>
   );
 }
